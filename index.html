@@ -1,0 +1,1862 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pybricks GUI - 图形化编程工具</title>
+<script src="https://cdn.jsdelivr.net/npm/blockly@9.3.3/blockly_compressed.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/blockly@9.3.3/blocks_compressed.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/blockly@9.3.3/python_compressed.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/blockly@9.3.3/msg/js/zh-hans.js"></script>
+<style>
+:root {
+  --scratch-blue: #4C97FF;
+  --scratch-dark: #2B3A67;
+  --prime-yellow: #F5C518;
+  --hub-color: #FF6680;
+  --motor-color: #4C97FF;
+  --sensor-color: #5CB1D6;
+  --move-color: #9966FF;
+  --control-color: #FFAB19;
+  --linefollow-color: #00BFA5;
+  --grabber-color: #E91E63;
+  --log-color: #7C4DFF;
+  --bg: #F5F5F5;
+  --panel-bg: #FFFFFF;
+  --text: #575E75;
+  --text-light: #8B93A8;
+  --border: #D9D9D9;
+  --radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.1);
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  display: flex; flex-direction: column;
+}
+
+/* ===== HEADER ===== */
+#header {
+  background: var(--scratch-blue);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: 52px;
+  min-height: 52px;
+  z-index: 100;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  user-select: none;
+}
+#header .logo {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 18px; font-weight: 700;
+  letter-spacing: 0.5px;
+}
+#header .logo-icon {
+  width: 32px; height: 32px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+#header .toolbar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+#header .toolbar button {
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.25);
+  padding: 7px 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: var(--font);
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+#header .toolbar button:hover { background: rgba(255,255,255,0.25); }
+#header .toolbar button.primary {
+  background: rgba(255,255,255,0.9);
+  color: var(--scratch-blue);
+  font-weight: 600;
+  border: none;
+}
+#header .toolbar button.primary:hover { background: #fff; }
+#header .hub-badge {
+  font-size: 12px;
+  background: rgba(0,0,0,0.15);
+  padding: 4px 10px;
+  border-radius: 12px;
+  display: flex; align-items: center; gap: 5px;
+}
+
+/* ===== MAIN ===== */
+#main {
+  display: flex; flex: 1; overflow: hidden;
+}
+#blocklyDiv {
+  flex: 1; height: 100%;
+}
+
+/* ===== MODALS ===== */
+.modal-overlay {
+  display: none;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 999;
+  align-items: center; justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--panel-bg);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  width: 90%; max-width: 760px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 0;
+}
+.modal-header {
+  background: var(--scratch-blue);
+  color: white;
+  padding: 16px 24px;
+  border-radius: 12px 12px 0 0;
+  font-size: 17px; font-weight: 700;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.modal-header .close-btn {
+  background: none; border: none; color: white;
+  font-size: 24px; cursor: pointer; padding: 0 4px;
+  line-height: 1;
+}
+.modal-body { padding: 24px; }
+.modal-footer {
+  padding: 0 24px 20px;
+  display: flex; gap: 8px; justify-content: flex-end;
+}
+.modal-footer button {
+  padding: 8px 20px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: white;
+  cursor: pointer;
+  font-family: var(--font); font-size: 14px;
+}
+.modal-footer button.save-btn {
+  background: var(--scratch-blue); color: white; border-color: var(--scratch-blue);
+  font-weight: 600;
+}
+
+/* ===== TABS ===== */
+.config-tabs {
+  display: flex;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 20px;
+  gap: 0;
+}
+.config-tab {
+  padding: 10px 18px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-light);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.15s;
+  user-select: none;
+  font-family: var(--font);
+}
+.config-tab:hover { color: var(--text); }
+.config-tab.active {
+  color: var(--scratch-blue);
+  border-bottom-color: var(--scratch-blue);
+}
+.config-tab-content { display: none; }
+.config-tab-content.active { display: block; }
+
+/* ===== CONFIG PANEL ===== */
+.config-section { margin-bottom: 24px; }
+.config-section h3 {
+  font-size: 14px; font-weight: 700;
+  color: var(--scratch-dark);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--scratch-blue);
+}
+.config-section h4 {
+  font-size: 13px; font-weight: 600;
+  color: var(--text);
+  margin: 12px 0 6px;
+}
+.hub-type-selector { display: flex; gap: 10px; flex-wrap: wrap; }
+.hub-type-card {
+  border: 2px solid var(--border); border-radius: var(--radius);
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+  min-width: 120px;
+}
+.hub-type-card:hover { border-color: var(--scratch-blue); }
+.hub-type-card.selected {
+  border-color: var(--scratch-blue);
+  background: rgba(76,151,255,0.08);
+}
+.hub-type-card .hub-name { font-weight: 700; font-size: 14px; }
+.hub-type-card .hub-desc { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+
+.ports-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+.port-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  background: #FAFAFA;
+}
+.port-card .port-label {
+  font-weight: 700; font-size: 14px; margin-bottom: 6px;
+  color: var(--scratch-dark);
+}
+.port-card select {
+  width: 100%; padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: var(--font); font-size: 13px;
+  background: white;
+}
+
+.port-visual {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 16px;
+  padding: 16px;
+  background: #F0F4FF;
+  border-radius: var(--radius);
+  flex-wrap: wrap;
+}
+.hub-visual {
+  width: 140px; height: 85px;
+  background: linear-gradient(135deg, var(--prime-yellow), #E6A800);
+  border-radius: 12px;
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  color: #5D4E37; font-size: 12px; font-weight: 700;
+  flex-shrink: 0;
+  border: 3px solid #D4A000;
+}
+.hub-visual::before {
+  content: '';
+  position: absolute;
+  width: 14px; height: 14px;
+  background: #00FF88; border-radius: 50%;
+  top: 8px; left: 50%; transform: translateX(-50%);
+  box-shadow: 0 0 6px rgba(0,255,136,0.5);
+}
+.port-dots { display: flex; flex-wrap: wrap; gap: 8px; }
+.port-dot {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  font-size: 10px;
+}
+.port-dot .dot {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid #ccc; background: white;
+}
+.port-dot .dot.motor { background: var(--motor-color); border-color: #3A7BE5; }
+.port-dot .dot.color_sensor { background: #FF6B35; border-color: #E55A2B; }
+.port-dot .dot.ultrasonic_sensor { background: #5CB1D6; border-color: #3A9BC0; }
+.port-dot .dot.force_sensor { background: #FFD700; border-color: #E5C200; }
+.port-dot .dot.gyro_sensor { background: #9966FF; border-color: #7B4FE5; }
+.port-dot .dot.grabber { background: #E91E63; border-color: #C0184E; }
+
+/* ===== GRABBER CONFIG ===== */
+.grabber-config {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.grabber-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  background: #FFF5F8;
+}
+.grabber-card h4 { color: #E91E63; margin-bottom: 12px; }
+.grabber-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+  font-size: 13px;
+}
+.grabber-row label { width: 70px; font-weight: 600; flex-shrink: 0; }
+.grabber-row select, .grabber-row input {
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: var(--font); font-size: 13px;
+}
+.grabber-row input[type="number"] { width: 80px; }
+
+/* ===== LINE FOLLOW CONFIG ===== */
+.lf-config-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+.lf-row {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px;
+}
+.lf-row label { font-weight: 600; white-space: nowrap; }
+.lf-row select, .lf-row input {
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: var(--font); font-size: 13px;
+}
+.lf-row input[type="number"] { width: 70px; }
+
+/* ===== MEMORY GAUGE ===== */
+.memory-section { margin-bottom: 20px; }
+.memory-gauge-container {
+  display: flex; align-items: center; gap: 12px;
+  margin: 12px 0;
+}
+.memory-bar-outer {
+  flex: 1; height: 24px;
+  background: #E0E0E0;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+.memory-bar-inner {
+  height: 100%;
+  border-radius: 12px;
+  transition: width 0.3s, background 0.3s;
+}
+.memory-bar-label {
+  font-weight: 700; font-size: 14px;
+  white-space: nowrap;
+}
+.memory-stats {
+  font-size: 12px; color: var(--text-light);
+  line-height: 1.6;
+  margin-top: 8px;
+}
+.memory-tips {
+  background: #FFF9E6;
+  border-left: 3px solid var(--prime-yellow);
+  padding: 10px 14px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: #5D4E37;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+/* ===== EXPORT MODAL ===== */
+.code-preview {
+  background: #1E1E2E; color: #CDD6F4;
+  border-radius: 8px; padding: 16px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 13px; line-height: 1.6;
+  white-space: pre-wrap;
+  max-height: 350px;
+  overflow: auto;
+}
+.export-mem-bar {
+  margin: 12px 0;
+  padding: 12px;
+  background: #F8F8FC;
+  border-radius: var(--radius);
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px;
+}
+.export-mem-bar .mini-gauge {
+  flex: 1; height: 10px;
+  background: #E0E0E0;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.export-mem-bar .mini-gauge-fill {
+  height: 100%; border-radius: 5px;
+  transition: width 0.3s, background 0.3s;
+}
+.export-mem-bar .mem-text { font-weight: 600; white-space: nowrap; }
+.export-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.export-actions button {
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: white;
+  cursor: pointer;
+  font-family: var(--font); font-size: 13px;
+}
+.export-actions button.copy-btn { background: #333; color: white; border-color: #333; }
+.export-actions button.download-btn { background: var(--scratch-blue); color: white; border-color: var(--scratch-blue); font-weight: 600; }
+
+/* ===== Blockly tweaks ===== */
+.blocklyToolboxDiv {
+  border-right: 1px solid #D9D9D9 !important;
+  background: #F2F2F2 !important;
+}
+.blocklyFlyout {
+  background: #FFFFFF !important;
+  border-right: 1px solid #D9D9D9 !important;
+}
+.blocklyMainBackground { stroke: none !important; }
+
+@media (max-width: 600px) {
+  #header { padding: 0 8px; }
+  #header .logo { font-size: 14px; }
+  #header .toolbar button { padding: 5px 10px; font-size: 11px; }
+  .modal { width: 96%; max-height: 90vh; }
+  .ports-grid { grid-template-columns: 1fr; }
+  .grabber-config { grid-template-columns: 1fr; }
+  .lf-config-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <div class="logo">
+    <div class="logo-icon">&#9881;</div>
+    <span>Pybricks GUI</span>
+  </div>
+  <div class="toolbar">
+    <span class="hub-badge" id="hubBadge">Hub: PrimeHub</span>
+    <button onclick="newProject()" title="新建项目">&#x1F5C4; 新建</button>
+    <button onclick="openConfigPanel()" title="接口配置">&#x1F527; 配置</button>
+    <button class="primary" onclick="exportPython()" title="导出Python代码">&#x2B07; 导出 Python</button>
+  </div>
+</div>
+
+<!-- MAIN WORKSPACE -->
+<div id="main">
+  <div id="blocklyDiv"></div>
+</div>
+
+<!-- CONFIG MODAL -->
+<div class="modal-overlay" id="configOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span>&#x1F527; 接口与功能配置</span>
+      <button class="close-btn" onclick="closeConfigPanel()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="config-tabs">
+        <div class="config-tab active" onclick="switchConfigTab('ports')">&#x1F3A7; 端口</div>
+        <div class="config-tab" onclick="switchConfigTab('grabbers')">&#x1F91C; 抓取器</div>
+        <div class="config-tab" onclick="switchConfigTab('linefollow')">&#x1F6A6; 巡线</div>
+        <div class="config-tab" onclick="switchConfigTab('memory')">&#x1F9E0; 内存助手</div>
+      </div>
+
+      <!-- PORTS TAB -->
+      <div class="config-tab-content active" id="tabPorts">
+        <div class="config-section">
+          <h3>Hub 类型</h3>
+          <div class="hub-type-selector" id="hubTypeSelector"></div>
+        </div>
+        <div class="config-section">
+          <h3>端口配置</h3>
+          <div class="port-visual" id="portVisual"></div>
+          <div class="ports-grid" id="portsGrid"></div>
+        </div>
+      </div>
+
+      <!-- GRABBERS TAB -->
+      <div class="config-tab-content" id="tabGrabbers">
+        <div class="config-section">
+          <h3>抓取器配置（两个杆子电机）</h3>
+          <p style="font-size:12px;color:var(--text-light);margin-bottom:12px">
+            配置抓取和框住试验品的两个电机。设置打开/关闭状态对应的角度度数，代码中只需调用状态名称。
+          </p>
+          <div class="grabber-config" id="grabberConfig"></div>
+        </div>
+      </div>
+
+      <!-- LINE FOLLOW TAB -->
+      <div class="config-tab-content" id="tabLineFollow">
+        <div class="config-section">
+          <h3>巡线参数配置</h3>
+          <p style="font-size:12px;color:var(--text-light);margin-bottom:12px">
+            配置PID巡线算法所需的硬件端口和参数。左右轮驱动前进/转弯/后退，颜色传感器检测线条。
+          </p>
+          <h4>端口设置</h4>
+          <div class="lf-config-grid" id="lfPorts"></div>
+          <h4>车辆参数</h4>
+          <div class="lf-config-grid" id="lfVehicle"></div>
+          <h4>PID 参数</h4>
+          <div class="lf-config-grid" id="lfPID"></div>
+          <h4>巡线反射值</h4>
+          <div class="lf-config-grid" id="lfRefl"></div>
+        </div>
+      </div>
+
+      <!-- MEMORY TAB -->
+      <div class="config-tab-content" id="tabMemory">
+        <div class="config-section">
+          <h3>内存使用模拟器</h3>
+          <p style="font-size:12px;color:var(--text-light);margin-bottom:12px">
+            PrimeHub 用户可用内存约 166KB。以下是根据当前工作区代码估算的内存使用情况。
+          </p>
+          <div class="memory-section" id="memSim"></div>
+          <div class="memory-tips" id="memTips"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeConfigPanel()">取消</button>
+      <button class="save-btn" onclick="saveConfig()">保存配置</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="exportOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span>&#x2B07; 导出 Python 代码</span>
+      <button class="close-btn" onclick="closeExportPanel()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="code-preview" id="codePreview"></div>
+      <div class="export-mem-bar" id="exportMemBar"></div>
+      <div class="export-actions">
+        <button class="copy-btn" onclick="copyCode()">&#x1F4CB; 复制代码</button>
+        <button class="download-btn" onclick="downloadCode()">&#x1F4BE; 下载 .py 文件</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ============================================================
+// APPLICATION STATE
+// ============================================================
+var DEVICE_OPTIONS = [
+  { value: '', label: '无' },
+  { value: 'motor', label: '电机 (Motor)' },
+  { value: 'color_sensor', label: '颜色传感器 (ColorSensor)' },
+  { value: 'ultrasonic_sensor', label: '超声波传感器 (UltrasonicSensor)' },
+  { value: 'force_sensor', label: '力传感器 (ForceSensor)' },
+  { value: 'gyro_sensor', label: '陀螺仪传感器 (GyroSensor)' },
+  { value: 'grabber', label: '抓取器 (Grabber)' },
+];
+
+var HUB_TYPES = [
+  { value: 'PrimeHub', label: 'PrimeHub', desc: 'SPIKE Prime 核心 (黄色)', ports: ['A','B','C','D','E','F'] },
+  { value: 'InventorHub', label: 'InventorHub', desc: 'Inventor 核心', ports: ['A','B','C','D','E','F'] },
+  { value: 'EssentialHub', label: 'EssentialHub', desc: 'SPIKE Essential 核心', ports: ['A','B'] },
+];
+
+var PORT_NAMES = {
+  PrimeHub:    { A:'A', B:'B', C:'C', D:'D', E:'E', F:'F' },
+  InventorHub: { A:'A', B:'B', C:'C', D:'D', E:'E', F:'F' },
+  EssentialHub:{ A:'A', B:'B' },
+};
+
+var appConfig = {
+  hubType: 'PrimeHub',
+  ports: { A:'motor', B:'motor', C:'', D:'', E:'', F:'' },
+  grabbers: {
+    A: { port:'D', open_degrees:180, close_degrees:0, speed:300 },
+    B: { port:'E', open_degrees:0, close_degrees:120, speed:250 }
+  },
+  lineFollow: {
+    left_port:'A', right_port:'B', sensor_port:'C',
+    wheel_diam:56, axle_track:112,
+    base_speed:200, freq:50,
+    kp:1.2, ki:0.01, kd:0.5,
+    line_refl:20, bg_refl:80
+  },
+  colorLogMax: 50
+};
+
+function getPortVarName(port, deviceType) {
+  var dt = deviceType || appConfig.ports[port] || 'motor';
+  var prefixes = {
+    motor: 'motor', color_sensor: 'color_sensor',
+    ultrasonic_sensor: 'ultrasonic_sensor', force_sensor: 'force_sensor',
+    gyro_sensor: 'gyro_sensor', grabber: 'grabber'
+  };
+  return (prefixes[dt] || 'motor') + '_' + port.toLowerCase();
+}
+
+// ============================================================
+// BLOCK DEFINITIONS
+// ============================================================
+var pybricksBlocks = [
+  // ---- HUB ----
+  { type:'pybricks_hub_display_text', message0:'在 Hub 上显示 %1', args0:[{type:'input_value',name:'TEXT',check:'String'}], previousStatement:null,nextStatement:null, colour:350, tooltip:'在 Hub 屏幕上显示文字' },
+  { type:'pybricks_hub_battery', message0:'Hub 电池电压', output:'Number', colour:350, tooltip:'获取 Hub 电池电压 (mV)' },
+  { type:'pybricks_hub_button_pressed', message0:'按钮 %1 是否按下', args0:[{type:'field_dropdown',name:'BUTTON',options:[['左 (Left)','left'],['右 (Right)','right'],['中心 (Center)','center'],['蓝牙 (Bluetooth)','bluetooth']]}], output:'Boolean', colour:350, tooltip:'检测指定按钮是否被按下' },
+  { type:'pybricks_hub_speaker_beep', message0:'蜂鸣 频率 %1 Hz 时长 %2 ms', args0:[{type:'input_value',name:'FREQ',check:'Number'},{type:'input_value',name:'DURATION',check:'Number'}], previousStatement:null,nextStatement:null, colour:350, tooltip:'让 Hub 发出指定频率和时长的蜂鸣声' },
+  { type:'pybricks_hub_status_light', message0:'状态灯设为 %1', args0:[{type:'field_dropdown',name:'COLOR',options:[['红色','Color.RED'],['绿色','Color.GREEN'],['蓝色','Color.BLUE'],['黄色','Color.YELLOW'],['橙色','Color.ORANGE'],['白色','Color.WHITE'],['关闭','None']]}], previousStatement:null,nextStatement:null, colour:350, tooltip:'设置 Hub 状态灯颜色' },
+  { type:'pybricks_hub_light', message0:'Hub 中心灯 %1', args0:[{type:'field_dropdown',name:'ACTION',options:[['开','on'],['关','off'],['闪烁','blink']]}], previousStatement:null,nextStatement:null, colour:350, tooltip:'控制 Hub 中心灯' },
+  { type:'pybricks_hub_display_image', message0:'在 Hub 上显示图像 %1', args0:[{type:'input_value',name:'IMAGE',check:'String'}], previousStatement:null,nextStatement:null, colour:350, tooltip:'在 Hub 屏幕上显示自定义图像' },
+  { type:'pybricks_hub_heading', message0:'Hub 方向角', output:'Number', colour:350, tooltip:'获取 Hub 当前朝向角度 (度)' },
+  { type:'pybricks_hub_imu_accel', message0:'IMU 加速度 %1', args0:[{type:'field_dropdown',name:'AXIS',options:[['X','0'],['Y','1'],['Z','2']]}], output:'Number', colour:350, tooltip:'获取指定轴的加速度值' },
+  { type:'pybricks_hub_imu_gyro', message0:'IMU 角速度 %1', args0:[{type:'field_dropdown',name:'AXIS',options:[['X','0'],['Y','1'],['Z','2']]}], output:'Number', colour:350, tooltip:'获取指定轴的角速度' },
+
+  // ---- MOTOR ----
+  { type:'pybricks_motor_init', message0:'初始化电机 端口 %1', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], previousStatement:null,nextStatement:null, colour:230, tooltip:'初始化指定端口的电机' },
+  { type:'pybricks_motor_run', message0:'电机 %1 持续运行 速度 %2 °/s', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]},{type:'input_value',name:'SPEED',check:'Number'}], previousStatement:null,nextStatement:null, colour:230, tooltip:'让电机持续以指定速度运行（非阻塞，轮子不停）' },
+  { type:'pybricks_motor_stop', message0:'电机 %1 停止', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], previousStatement:null,nextStatement:null, colour:230, tooltip:'停止指定端口的电机' },
+  { type:'pybricks_motor_run_angle', message0:'电机 %1 运行角度 速度 %2 °/s 角度 %3 ° 然后 %4', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]},{type:'input_value',name:'SPEED',check:'Number'},{type:'input_value',name:'ANGLE',check:'Number'},{type:'field_dropdown',name:'STOP',options:[['停止','Stop.COAST'],['保持','Stop.HOLD'],['刹车','Stop.BRAKE']]}], previousStatement:null,nextStatement:null, colour:230, tooltip:'让电机转动指定角度后停止' },
+  { type:'pybricks_motor_run_time', message0:'电机 %1 运行时间 速度 %2 °/s 时间 %3 ms 然后 %4', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]},{type:'input_value',name:'SPEED',check:'Number'},{type:'input_value',name:'TIME',check:'Number'},{type:'field_dropdown',name:'STOP',options:[['停止','Stop.COAST'],['保持','Stop.HOLD'],['刹车','Stop.BRAKE']]}], previousStatement:null,nextStatement:null, colour:230, tooltip:'让电机运行指定时间后停止' },
+  { type:'pybricks_motor_run_async', message0:'电机 %1 异步运行角度 速度 %2 °/s 角度 %3 ° 然后 %4（不等待完成）', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]},{type:'input_value',name:'SPEED',check:'Number'},{type:'input_value',name:'ANGLE',check:'Number'},{type:'field_dropdown',name:'STOP',options:[['停止','Stop.COAST'],['保持','Stop.HOLD'],['刹车','Stop.BRAKE']]}], previousStatement:null,nextStatement:null, colour:230, tooltip:'异步运行电机（非阻塞），配合其他操作使用' },
+  { type:'pybricks_motor_run_target', message0:'电机 %1 运行到目标 速度 %2 °/s 角度 %3 °', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]},{type:'input_value',name:'SPEED',check:'Number'},{type:'input_value',name:'ANGLE',check:'Number'}], previousStatement:null,nextStatement:null, colour:230, tooltip:'让电机运行到目标绝对角度' },
+  { type:'pybricks_motor_hold', message0:'电机 %1 保持位置', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], previousStatement:null,nextStatement:null, colour:230, tooltip:'主动保持电机当前位置' },
+  { type:'pybricks_motor_load', message0:'电机 %1 负载', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], output:'Number', colour:230, tooltip:'获取电机当前负载 (mNm)' },
+  { type:'pybricks_motor_done', message0:'电机 %1 运动完成', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], output:'Boolean', colour:230, tooltip:'检查电机异步运动是否完成' },
+  { type:'pybricks_motor_get_angle', message0:'电机 %1 角度', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], output:'Number', colour:230, tooltip:'获取电机当前角度 (度)' },
+  { type:'pybricks_motor_get_speed', message0:'电机 %1 速度', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], output:'Number', colour:230, tooltip:'获取电机当前速度 (°/s)' },
+  { type:'pybricks_motor_reset_angle', message0:'电机 %1 重置角度', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], previousStatement:null,nextStatement:null, colour:230, tooltip:'将电机角度计数器重置为 0' },
+  { type:'pybricks_motor_set_dc', message0:'电机 %1 占空比 %2 %', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]},{type:'input_value',name:'DUTY',check:'Number'}], previousStatement:null,nextStatement:null, colour:230, tooltip:'设置电机占空比 (PWM)' },
+  { type:'pybricks_motor_run_until_stalled', message0:'电机 %1 运行直到堵转 速度 %2 °/s 然后 %3', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]},{type:'input_value',name:'SPEED',check:'Number'},{type:'field_dropdown',name:'STOP',options:[['停止','Stop.COAST'],['保持','Stop.HOLD'],['刹车','Stop.BRAKE']]}], previousStatement:null,nextStatement:null, colour:230, tooltip:'让电机运行直到发生堵转' },
+
+  // ---- COLOR SENSOR ----
+  { type:'pybricks_color_sensor_init', message0:'初始化颜色传感器 端口 %1', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], previousStatement:null,nextStatement:null, colour:195, tooltip:'初始化指定端口的颜色传感器' },
+  { type:'pybricks_color_sensor_color', message0:'颜色传感器 %1 颜色值', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], output:null, colour:195, tooltip:'读取颜色传感器检测到的颜色' },
+  { type:'pybricks_color_sensor_reflection', message0:'颜色传感器 %1 反射光', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], output:'Number', colour:195, tooltip:'读取颜色传感器的反射光强度' },
+  { type:'pybricks_color_sensor_ambient', message0:'颜色传感器 %1 环境光', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], output:'Number', colour:195, tooltip:'读取颜色传感器的环境光强度' },
+  { type:'pybricks_color_sensor_hsv', message0:'颜色传感器 %1 HSV 值', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], output:null, colour:195, tooltip:'读取颜色传感器的 HSV 颜色值' },
+  { type:'pybricks_color_sensor_lights', message0:'颜色传感器 %1 LED 灯 %2', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]},{type:'field_dropdown',name:'ACTION',options:[['开 (所有)','on_all'],['关 (所有)','off_all'],['仅开1','on_1'],['仅开2','on_2'],['仅开3','on_3']]}], previousStatement:null,nextStatement:null, colour:195, tooltip:'控制颜色传感器的 LED 灯' },
+
+  // ---- ULTRASONIC SENSOR ----
+  { type:'pybricks_ultrasonic_init', message0:'初始化超声波传感器 端口 %1', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], previousStatement:null,nextStatement:null, colour:185, tooltip:'初始化指定端口的超声波传感器' },
+  { type:'pybricks_ultrasonic_distance', message0:'超声波传感器 %1 距离', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], output:'Number', colour:185, tooltip:'读取超声波传感器的距离值 (mm)' },
+  { type:'pybricks_ultrasonic_presence', message0:'超声波传感器 %1 检测到物体', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], output:'Boolean', colour:185, tooltip:'检测是否有物体在超声波传感器前方' },
+
+  // ---- FORCE SENSOR ----
+  { type:'pybricks_force_sensor_init', message0:'初始化力传感器 端口 %1', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], previousStatement:null,nextStatement:null, colour:50, tooltip:'初始化指定端口的力传感器' },
+  { type:'pybricks_force_sensor_force', message0:'力传感器 %1 力度', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], output:'Number', colour:50, tooltip:'读取力传感器的力度值 (N)' },
+  { type:'pybricks_force_sensor_pressed', message0:'力传感器 %1 是否被按压', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], output:'Boolean', colour:50, tooltip:'检测力传感器是否被按压' },
+
+  // ---- GYRO SENSOR ----
+  { type:'pybricks_gyro_init', message0:'初始化陀螺仪传感器 端口 %1', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], previousStatement:null,nextStatement:null, colour:270, tooltip:'初始化指定端口的陀螺仪传感器' },
+  { type:'pybricks_gyro_angle', message0:'陀螺仪 %1 角度', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], output:'Number', colour:270, tooltip:'读取陀螺仪传感器的累积角度' },
+  { type:'pybricks_gyro_rate', message0:'陀螺仪 %1 角速度', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], output:'Number', colour:270, tooltip:'读取陀螺仪传感器的角速度' },
+  { type:'pybricks_gyro_reset_angle', message0:'陀螺仪 %1 重置角度', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], previousStatement:null,nextStatement:null, colour:270, tooltip:'重置陀螺仪传感器的累积角度' },
+
+  // ---- DRIVE BASE ----
+  { type:'pybricks_drive_base_init', message0:'初始化驱动底座 左轮端口 %1 右轮端口 %2 轮径 %3 mm 轴距 %4 mm', args0:[{type:'field_dropdown',name:'LEFT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]},{type:'field_dropdown',name:'RIGHT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]},{type:'input_value',name:'WHEEL_DIAM',check:'Number'},{type:'input_value',name:'AXLE_TRACK',check:'Number'}], previousStatement:null,nextStatement:null, colour:300, tooltip:'初始化双轮驱动底座' },
+  { type:'pybricks_drive_base_straight', message0:'驱动底座 直行 %1 mm', args0:[{type:'input_value',name:'DISTANCE',check:'Number'}], previousStatement:null,nextStatement:null, colour:300, tooltip:'让机器人直线行驶指定距离' },
+  { type:'pybricks_drive_base_turn', message0:'驱动底座 转向 %1 °', args0:[{type:'input_value',name:'ANGLE',check:'Number'}], previousStatement:null,nextStatement:null, colour:300, tooltip:'让机器人原地转向指定角度' },
+  { type:'pybricks_drive_base_curve', message0:'驱动底座 弧线 半径 %1 mm 角度 %2 °', args0:[{type:'input_value',name:'RADIUS',check:'Number'},{type:'input_value',name:'ANGLE',check:'Number'}], previousStatement:null,nextStatement:null, colour:300, tooltip:'让机器人沿弧线行驶' },
+  { type:'pybricks_drive_base_drive', message0:'驱动底座 持续驱动 速度 %1 mm/s 转向 %2 °/s（非阻塞）', args0:[{type:'input_value',name:'SPEED',check:'Number'},{type:'input_value',name:'TURN_RATE',check:'Number'}], previousStatement:null,nextStatement:null, colour:300, tooltip:'持续驱动底座（非阻塞，轮子不停）' },
+  { type:'pybricks_drive_base_stop', message0:'驱动底座 停止', previousStatement:null,nextStatement:null, colour:300, tooltip:'停止驱动底座运动' },
+  { type:'pybricks_drive_base_distance', message0:'驱动底座 行驶距离', output:'Number', colour:300, tooltip:'获取驱动底座行驶的总距离 (mm)' },
+  { type:'pybricks_drive_base_angle', message0:'驱动底座 转向角度', output:'Number', colour:300, tooltip:'获取驱动底座的总转向角度 (度)' },
+  { type:'pybricks_drive_base_settings', message0:'驱动底座 设置 速度 %1 加速度 %2 转向速度 %3 转向加速度 %4', args0:[{type:'input_value',name:'SPEED',check:'Number'},{type:'input_value',name:'ACCEL',check:'Number'},{type:'input_value',name:'TURN_RATE',check:'Number'},{type:'input_value',name:'TURN_ACCEL',check:'Number'}], previousStatement:null,nextStatement:null, colour:300, tooltip:'设置驱动底座的运行参数' },
+
+  // ---- LINE FOLLOW (PID) ----
+  { type:'pybricks_line_follow_start', message0:'巡线开始', previousStatement:null,nextStatement:null, colour:'#00BFA5', tooltip:'启动PID巡线（轮子持续运行，不会停止）' },
+  { type:'pybricks_line_follow_stop', message0:'巡线停止', previousStatement:null,nextStatement:null, colour:'#00BFA5', tooltip:'停止巡线并停转轮子' },
+  { type:'pybricks_line_follow_step', message0:'巡线单次校正', previousStatement:null,nextStatement:null, colour:'#00BFA5', tooltip:'执行一次PID巡线校正（用于自定义循环中）' },
+  { type:'pybricks_line_follow_forward', message0:'巡线前进 %1 mm 是否巡线 %2', args0:[{type:'input_value',name:'DISTANCE',check:'Number'},{type:'field_dropdown',name:'FOLLOW',options:[['是','True'],['否','False']]}], previousStatement:null,nextStatement:null, colour:'#00BFA5', tooltip:'前进指定距离，可选择是否启用巡线校正' },
+  { type:'pybricks_line_follow_turn', message0:'巡线转弯 %1 ° 半径 %2 mm', args0:[{type:'input_value',name:'ANGLE',check:'Number'},{type:'input_value',name:'RADIUS',check:'Number'}], previousStatement:null,nextStatement:null, colour:'#00BFA5', tooltip:'转弯指定角度和半径' },
+  { type:'pybricks_line_follow_backward', message0:'巡线后退 %1 mm', args0:[{type:'input_value',name:'DISTANCE',check:'Number'}], previousStatement:null,nextStatement:null, colour:'#00BFA5', tooltip:'后退指定距离' },
+
+  // ---- GRABBER ----
+  { type:'pybricks_grabber_action', message0:'抓取器 %1 %2', args0:[{type:'field_dropdown',name:'WHICH',options:[['A (杆子1)','A'],['B (杆子2)','B']]},{type:'field_dropdown',name:'STATE',options:[['打开','open'],['关闭','close']]}], previousStatement:null,nextStatement:null, colour:'#E91E63', tooltip:'控制抓取器打开或关闭（使用配置的度数）' },
+  { type:'pybricks_grabber_async', message0:'抓取器 %1 %2（异步）', args0:[{type:'field_dropdown',name:'WHICH',options:[['A (杆子1)','A'],['B (杆子2)','B']]},{type:'field_dropdown',name:'STATE',options:[['打开','open'],['关闭','close']]}], previousStatement:null,nextStatement:null, colour:'#E91E63', tooltip:'异步控制抓取器（非阻塞，不等待完成）' },
+
+  // ---- COLOR LOG ----
+  { type:'pybricks_color_log', message0:'记录颜色传感器 %1 到日志', args0:[{type:'field_dropdown',name:'PORT',options:[['A','A'],['B','B'],['C','C'],['D','D'],['E','E'],['F','F']]}], previousStatement:null,nextStatement:null, colour:'#7C4DFF', tooltip:'将当前颜色和反射光记录到内存日志（环形缓冲）' },
+  { type:'pybricks_color_log_clear', message0:'清空颜色日志', previousStatement:null,nextStatement:null, colour:'#7C4DFF', tooltip:'清空所有已记录的颜色日志' },
+  { type:'pybricks_last_color', message0:'上一次记录的颜色', output:null, colour:'#7C4DFF', tooltip:'获取日志中最后一次记录的颜色值' },
+  { type:'pybricks_last_reflection', message0:'上一次记录的反射光', output:'Number', colour:'#7C4DFF', tooltip:'获取日志中最后一次记录的反射光强度' },
+  { type:'pybricks_color_log_count', message0:'颜色日志条数', output:'Number', colour:'#7C4DFF', tooltip:'获取已记录的颜色日志条目数' },
+
+  // ---- MEMORY CONTROL ----
+  { type:'pybricks_gc_collect', message0:'垃圾回收 (释放内存)', previousStatement:null,nextStatement:null, colour:120, tooltip:'手动触发垃圾回收，释放不再使用的内存' },
+
+  // ---- CONTROL ----
+  { type:'pybricks_wait', message0:'等待 %1 毫秒', args0:[{type:'input_value',name:'TIME',check:'Number'}], previousStatement:null,nextStatement:null, colour:30, tooltip:'等待指定的毫秒数' },
+  { type:'pybricks_stopwatch', message0:'秒表计时', output:'Number', colour:30, tooltip:'获取秒表当前时间 (ms)' },
+  { type:'pybricks_stopwatch_reset', message0:'秒表重置', previousStatement:null,nextStatement:null, colour:30, tooltip:'重置秒表计时器' },
+];
+
+Blockly.defineBlocksWithJsonArray(pybricksBlocks);
+
+// ============================================================
+// PYTHON CODE GENERATORS
+// ============================================================
+var Py = Blockly.Python;
+
+// -- Hub --
+Py['pybricks_hub_display_text'] = function(b) {
+  var text = Py.valueToCode(b, 'TEXT', Py.ORDER_ATOMIC) || "''";
+  return 'hub.display.text(' + text + ')\n';
+};
+Py['pybricks_hub_battery'] = function(b) {
+  return ['hub.battery.voltage()', Py.ORDER_ATOMIC];
+};
+Py['pybricks_hub_button_pressed'] = function(b) {
+  var btn = b.getFieldValue('BUTTON');
+  return ['hub.buttons.pressed() == Button.' + btn.toUpperCase(), Py.ORDER_EQUALITY];
+};
+Py['pybricks_hub_speaker_beep'] = function(b) {
+  var freq = Py.valueToCode(b, 'FREQ', Py.ORDER_ATOMIC) || '440';
+  var dur = Py.valueToCode(b, 'DURATION', Py.ORDER_ATOMIC) || '500';
+  return 'hub.speaker.beep(' + freq + ', ' + dur + ')\n';
+};
+Py['pybricks_hub_status_light'] = function(b) {
+  var color = b.getFieldValue('COLOR');
+  return 'hub.status_light.on(' + color + ')\n';
+};
+Py['pybricks_hub_light'] = function(b) {
+  var action = b.getFieldValue('ACTION');
+  if (action === 'on') return 'hub.light.on(Color.WHITE)\n';
+  if (action === 'off') return 'hub.light.off()\n';
+  if (action === 'blink') return 'hub.light.blink(Color.WHITE, [500, 500])\n';
+  return '';
+};
+Py['pybricks_hub_display_image'] = function(b) {
+  var img = Py.valueToCode(b, 'IMAGE', Py.ORDER_ATOMIC) || 'Image.HAPPY';
+  return 'hub.display.image(' + img + ')\n';
+};
+Py['pybricks_hub_heading'] = function(b) {
+  return ['hub.imu.heading()', Py.ORDER_ATOMIC];
+};
+Py['pybricks_hub_imu_accel'] = function(b) {
+  var axis = b.getFieldValue('AXIS');
+  return ['hub.imu.acceleration()[' + axis + ']', Py.ORDER_ATOMIC];
+};
+Py['pybricks_hub_imu_gyro'] = function(b) {
+  var axis = b.getFieldValue('AXIS');
+  return ['hub.imu.angular_velocity()[' + axis + ']', Py.ORDER_ATOMIC];
+};
+
+// -- Motor --
+Py['pybricks_motor_init'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return getPortVarName(port, 'motor') + ' = Motor(Port.' + port + ')\n';
+};
+Py['pybricks_motor_run'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  var speed = Py.valueToCode(b, 'SPEED', Py.ORDER_ATOMIC) || '500';
+  return getPortVarName(port, 'motor') + '.run(' + speed + ')\n';
+};
+Py['pybricks_motor_stop'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return getPortVarName(port, 'motor') + '.stop()\n';
+};
+Py['pybricks_motor_run_angle'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  var speed = Py.valueToCode(b, 'SPEED', Py.ORDER_ATOMIC) || '500';
+  var angle = Py.valueToCode(b, 'ANGLE', Py.ORDER_ATOMIC) || '90';
+  var stop = b.getFieldValue('STOP');
+  return getPortVarName(port, 'motor') + '.run_angle(' + speed + ', ' + angle + ', then=' + stop + ')\n';
+};
+Py['pybricks_motor_run_time'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  var speed = Py.valueToCode(b, 'SPEED', Py.ORDER_ATOMIC) || '500';
+  var time = Py.valueToCode(b, 'TIME', Py.ORDER_ATOMIC) || '1000';
+  var stop = b.getFieldValue('STOP');
+  return getPortVarName(port, 'motor') + '.run_time(' + speed + ', ' + time + ', then=' + stop + ')\n';
+};
+Py['pybricks_motor_run_async'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  var speed = Py.valueToCode(b, 'SPEED', Py.ORDER_ATOMIC) || '500';
+  var angle = Py.valueToCode(b, 'ANGLE', Py.ORDER_ATOMIC) || '90';
+  var stop = b.getFieldValue('STOP');
+  return getPortVarName(port, 'motor') + '.run_angle(' + speed + ', ' + angle + ', then=' + stop + ', wait=False)\n';
+};
+Py['pybricks_motor_run_target'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  var speed = Py.valueToCode(b, 'SPEED', Py.ORDER_ATOMIC) || '500';
+  var angle = Py.valueToCode(b, 'ANGLE', Py.ORDER_ATOMIC) || '0';
+  return getPortVarName(port, 'motor') + '.run_target(' + speed + ', ' + angle + ', then=Stop.HOLD)\n';
+};
+Py['pybricks_motor_hold'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return getPortVarName(port, 'motor') + '.hold()\n';
+};
+Py['pybricks_motor_load'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return [getPortVarName(port, 'motor') + '.load()', Py.ORDER_ATOMIC];
+};
+Py['pybricks_motor_done'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return [getPortVarName(port, 'motor') + '.control.done()', Py.ORDER_ATOMIC];
+};
+Py['pybricks_motor_get_angle'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return [getPortVarName(port, 'motor') + '.angle()', Py.ORDER_ATOMIC];
+};
+Py['pybricks_motor_get_speed'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return [getPortVarName(port, 'motor') + '.speed()', Py.ORDER_ATOMIC];
+};
+Py['pybricks_motor_reset_angle'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return getPortVarName(port, 'motor') + '.reset_angle(0)\n';
+};
+Py['pybricks_motor_set_dc'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  var duty = Py.valueToCode(b, 'DUTY', Py.ORDER_ATOMIC) || '50';
+  return getPortVarName(port, 'motor') + '.dc(' + duty + ')\n';
+};
+Py['pybricks_motor_run_until_stalled'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  var speed = Py.valueToCode(b, 'SPEED', Py.ORDER_ATOMIC) || '200';
+  var stop = b.getFieldValue('STOP');
+  return getPortVarName(port, 'motor') + '.run_until_stalled(' + speed + ', then=' + stop + ')\n';
+};
+
+// -- Color Sensor --
+Py['pybricks_color_sensor_init'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return getPortVarName(port, 'color_sensor') + ' = ColorSensor(Port.' + port + ')\n';
+};
+Py['pybricks_color_sensor_color'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return [getPortVarName(port, 'color_sensor') + '.color()', Py.ORDER_ATOMIC];
+};
+Py['pybricks_color_sensor_reflection'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return [getPortVarName(port, 'color_sensor') + '.reflection()', Py.ORDER_ATOMIC];
+};
+Py['pybricks_color_sensor_ambient'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return [getPortVarName(port, 'color_sensor') + '.ambient()', Py.ORDER_ATOMIC];
+};
+Py['pybricks_color_sensor_hsv'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return [getPortVarName(port, 'color_sensor') + '.hsv()', Py.ORDER_ATOMIC];
+};
+Py['pybricks_color_sensor_lights'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  var action = b.getFieldValue('ACTION');
+  var v = getPortVarName(port, 'color_sensor');
+  if (action === 'on_all') return v + '.lights.on(Color.WHITE)\n';
+  if (action === 'off_all') return v + '.lights.off()\n';
+  if (action === 'on_1') return v + '.lights.on(Color.WHITE, 1)\n';
+  if (action === 'on_2') return v + '.lights.on(Color.WHITE, 2)\n';
+  if (action === 'on_3') return v + '.lights.on(Color.WHITE, 3)\n';
+  return '';
+};
+
+// -- Ultrasonic Sensor --
+Py['pybricks_ultrasonic_init'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return getPortVarName(port, 'ultrasonic_sensor') + ' = UltrasonicSensor(Port.' + port + ')\n';
+};
+Py['pybricks_ultrasonic_distance'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return [getPortVarName(port, 'ultrasonic_sensor') + '.distance()', Py.ORDER_ATOMIC];
+};
+Py['pybricks_ultrasonic_presence'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return [getPortVarName(port, 'ultrasonic_sensor') + '.presence()', Py.ORDER_ATOMIC];
+};
+
+// -- Force Sensor --
+Py['pybricks_force_sensor_init'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return getPortVarName(port, 'force_sensor') + ' = ForceSensor(Port.' + port + ')\n';
+};
+Py['pybricks_force_sensor_force'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return [getPortVarName(port, 'force_sensor') + '.force()', Py.ORDER_ATOMIC];
+};
+Py['pybricks_force_sensor_pressed'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return [getPortVarName(port, 'force_sensor') + '.pressed()', Py.ORDER_ATOMIC];
+};
+
+// -- Gyro Sensor --
+Py['pybricks_gyro_init'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return getPortVarName(port, 'gyro_sensor') + ' = GyroSensor(Port.' + port + ')\n';
+};
+Py['pybricks_gyro_angle'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return [getPortVarName(port, 'gyro_sensor') + '.angle()', Py.ORDER_ATOMIC];
+};
+Py['pybricks_gyro_rate'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return [getPortVarName(port, 'gyro_sensor') + '.speed()', Py.ORDER_ATOMIC];
+};
+Py['pybricks_gyro_reset_angle'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return getPortVarName(port, 'gyro_sensor') + '.reset_angle(0)\n';
+};
+
+// -- Drive Base --
+Py['pybricks_drive_base_init'] = function(b) {
+  var left = b.getFieldValue('LEFT');
+  var right = b.getFieldValue('RIGHT');
+  var wd = Py.valueToCode(b, 'WHEEL_DIAM', Py.ORDER_ATOMIC) || '56';
+  var at = Py.valueToCode(b, 'AXLE_TRACK', Py.ORDER_ATOMIC) || '112';
+  return 'drive_base = DriveBase(' + getPortVarName(left, 'motor') + ', ' +
+    getPortVarName(right, 'motor') + ', ' + wd + ', ' + at + ')\n';
+};
+Py['pybricks_drive_base_straight'] = function(b) {
+  var dist = Py.valueToCode(b, 'DISTANCE', Py.ORDER_ATOMIC) || '100';
+  return 'drive_base.straight(' + dist + ')\n';
+};
+Py['pybricks_drive_base_turn'] = function(b) {
+  var angle = Py.valueToCode(b, 'ANGLE', Py.ORDER_ATOMIC) || '90';
+  return 'drive_base.turn(' + angle + ')\n';
+};
+Py['pybricks_drive_base_curve'] = function(b) {
+  var radius = Py.valueToCode(b, 'RADIUS', Py.ORDER_ATOMIC) || '200';
+  var angle = Py.valueToCode(b, 'ANGLE', Py.ORDER_ATOMIC) || '90';
+  return 'drive_base.curve(' + radius + ', ' + angle + ')\n';
+};
+Py['pybricks_drive_base_drive'] = function(b) {
+  var speed = Py.valueToCode(b, 'SPEED', Py.ORDER_ATOMIC) || '200';
+  var tr = Py.valueToCode(b, 'TURN_RATE', Py.ORDER_ATOMIC) || '0';
+  return 'drive_base.drive(' + speed + ', ' + tr + ')\n';
+};
+Py['pybricks_drive_base_stop'] = function(b) {
+  return 'drive_base.stop()\n';
+};
+Py['pybricks_drive_base_distance'] = function(b) {
+  return ['drive_base.distance()', Py.ORDER_ATOMIC];
+};
+Py['pybricks_drive_base_angle'] = function(b) {
+  return ['drive_base.angle()', Py.ORDER_ATOMIC];
+};
+Py['pybricks_drive_base_settings'] = function(b) {
+  var speed = Py.valueToCode(b, 'SPEED', Py.ORDER_ATOMIC) || '200';
+  var accel = Py.valueToCode(b, 'ACCEL', Py.ORDER_ATOMIC) || '100';
+  var tr = Py.valueToCode(b, 'TURN_RATE', Py.ORDER_ATOMIC) || '100';
+  var ta = Py.valueToCode(b, 'TURN_ACCEL', Py.ORDER_ATOMIC) || '100';
+  return 'drive_base.settings(' + speed + ', ' + accel + ', ' + tr + ', ' + ta + ')\n';
+};
+
+// -- Line Follow (delegates to helper function generator) --
+Py['pybricks_line_follow_start'] = function(b) { return '_lf_start()\n'; };
+Py['pybricks_line_follow_stop'] = function(b) { return '_lf_stop()\n'; };
+Py['pybricks_line_follow_step'] = function(b) { return '_lf_step()\n'; };
+Py['pybricks_line_follow_forward'] = function(b) {
+  var dist = Py.valueToCode(b, 'DISTANCE', Py.ORDER_ATOMIC) || '100';
+  var follow = b.getFieldValue('FOLLOW');
+  return '_lf_forward(' + dist + ', follow_line=' + follow + ')\n';
+};
+Py['pybricks_line_follow_turn'] = function(b) {
+  var angle = Py.valueToCode(b, 'ANGLE', Py.ORDER_ATOMIC) || '90';
+  var radius = Py.valueToCode(b, 'RADIUS', Py.ORDER_ATOMIC) || '200';
+  return '_lf_turn(' + angle + ', ' + radius + ')\n';
+};
+Py['pybricks_line_follow_backward'] = function(b) {
+  var dist = Py.valueToCode(b, 'DISTANCE', Py.ORDER_ATOMIC) || '100';
+  return '_lf_backward(' + dist + ')\n';
+};
+
+// -- Grabber (uses configured state degrees) --
+Py['pybricks_grabber_action'] = function(b) {
+  var which = b.getFieldValue('WHICH');
+  var state = b.getFieldValue('STATE');
+  return '_grabber_' + which + '_' + state + '()\n';
+};
+Py['pybricks_grabber_async'] = function(b) {
+  var which = b.getFieldValue('WHICH');
+  var state = b.getFieldValue('STATE');
+  return '_grabber_' + which + '_' + state + '_async()\n';
+};
+
+// -- Color Log --
+Py['pybricks_color_log'] = function(b) {
+  var port = b.getFieldValue('PORT');
+  return '_log_color(' + getPortVarName(port, 'color_sensor') + ')\n';
+};
+Py['pybricks_color_log_clear'] = function(b) { return '_color_log.clear()\n'; };
+Py['pybricks_last_color'] = function(b) {
+  return ['(_color_log[-1][0] if _color_log else None)', Py.ORDER_ATOMIC];
+};
+Py['pybricks_last_reflection'] = function(b) {
+  return ['(_color_log[-1][1] if _color_log else 0)', Py.ORDER_ATOMIC];
+};
+Py['pybricks_color_log_count'] = function(b) {
+  return ['len(_color_log)', Py.ORDER_ATOMIC];
+};
+
+// -- Memory control --
+Py['pybricks_gc_collect'] = function(b) { return 'gc.collect()\n'; };
+
+// -- Control --
+Py['pybricks_wait'] = function(b) {
+  var time = Py.valueToCode(b, 'TIME', Py.ORDER_ATOMIC) || '1000';
+  return 'wait(' + time + ')\n';
+};
+Py['pybricks_stopwatch'] = function(b) {
+  return ['stopwatch.time()', Py.ORDER_ATOMIC];
+};
+Py['pybricks_stopwatch_reset'] = function(b) {
+  return 'stopwatch.reset()\n';
+};
+
+// ============================================================
+// HELPER FUNCTION GENERATORS
+// ============================================================
+function buildLineFollowCode(cfg) {
+  var lf = cfg || appConfig.lineFollow;
+  var leftVar = getPortVarName(lf.left_port, 'motor');
+  var rightVar = getPortVarName(lf.right_port, 'motor');
+  var sensorVar = getPortVarName(lf.sensor_port, 'color_sensor');
+  var mid = '(((' + lf.line_refl + ' + ' + lf.bg_refl + ') // 2))';
+
+  var code = '\n# ===== 巡线 PID 配置 =====\n';
+  code += '_lf = {\n';
+  code += '    "left": ' + leftVar + ',\n';
+  code += '    "right": ' + rightVar + ',\n';
+  code += '    "sensor": ' + sensorVar + ',\n';
+  code += '    "wheel_diam": ' + lf.wheel_diam + ',\n';
+  code += '    "axle_track": ' + lf.axle_track + ',\n';
+  code += '    "base_speed": ' + lf.base_speed + ',\n';
+  code += '    "kp": ' + lf.kp + ',\n';
+  code += '    "ki": ' + lf.ki + ',\n';
+  code += '    "kd": ' + lf.kd + ',\n';
+  code += '    "mid": ' + mid + ',\n';
+  code += '    "active": False,\n';
+  code += '    "integral": 0,\n';
+  code += '    "last_error": 0,\n';
+  code += '}\n\n';
+
+  code += 'def _lf_start():\n';
+  code += '    _lf["active"] = True\n';
+  code += '    _lf["integral"] = 0\n';
+  code += '    _lf["last_error"] = 0\n';
+  code += '    _lf["left"].run(_lf["base_speed"])\n';
+  code += '    _lf["right"].run(_lf["base_speed"])\n\n';
+
+  code += 'def _lf_stop():\n';
+  code += '    _lf["active"] = False\n';
+  code += '    _lf["left"].stop()\n';
+  code += '    _lf["right"].stop()\n\n';
+
+  code += 'def _lf_step():\n';
+  code += '    if not _lf["active"]:\n';
+  code += '        return\n';
+  code += '    refl = _lf["sensor"].reflection()\n';
+  code += '    error = refl - _lf["mid"]\n';
+  code += '    _lf["integral"] += error\n';
+  code += '    deriv = error - _lf["last_error"]\n';
+  code += '    _lf["last_error"] = error\n';
+  code += '    corr = _lf["kp"] * error + _lf["ki"] * _lf["integral"] + _lf["kd"] * deriv\n';
+  code += '    _lf["left"].run(_lf["base_speed"] + corr)\n';
+  code += '    _lf["right"].run(_lf["base_speed"] - corr)\n\n';
+
+  code += 'def _lf_forward(dist, follow_line=True):\n';
+  code += '    circ = 3.14159 * _lf["wheel_diam"]\n';
+  code += '    deg = int((dist / circ) * 360)\n';
+  code += '    _lf["left"].reset_angle(0)\n';
+  code += '    _lf["right"].reset_angle(0)\n';
+  code += '    _lf["left"].run(_lf["base_speed"])\n';
+  code += '    _lf["right"].run(_lf["base_speed"])\n';
+  code += '    while abs(_lf["left"].angle()) < deg:\n';
+  code += '        if follow_line:\n';
+  code += '            _lf_step()\n';
+  code += '        wait(1)\n';
+  code += '    if not follow_line or not _lf["active"]:\n';
+  code += '        _lf["left"].hold()\n';
+  code += '        _lf["right"].hold()\n\n';
+
+  code += 'def _lf_turn(angle, radius):\n';
+  code += '    circ = 2 * 3.14159 * radius\n';
+  code += '    dist = (abs(angle) / 360.0) * circ\n';
+  code += '    wheel_circ = 3.14159 * _lf["wheel_diam"]\n';
+  code += '    wheel_deg = int((dist / wheel_circ) * 360)\n';
+  code += '    if angle > 0:\n';
+  code += '        _lf["left"].run_angle(_lf["base_speed"], wheel_deg, then=Stop.HOLD, wait=False)\n';
+  code += '        _lf["right"].run_angle(_lf["base_speed"], -wheel_deg, then=Stop.HOLD, wait=True)\n';
+  code += '    else:\n';
+  code += '        _lf["left"].run_angle(_lf["base_speed"], -wheel_deg, then=Stop.HOLD, wait=False)\n';
+  code += '        _lf["right"].run_angle(_lf["base_speed"], wheel_deg, then=Stop.HOLD, wait=True)\n\n';
+
+  code += 'def _lf_backward(dist):\n';
+  code += '    circ = 3.14159 * _lf["wheel_diam"]\n';
+  code += '    deg = int((dist / circ) * 360)\n';
+  code += '    _lf["left"].run_angle(_lf["base_speed"], -deg, then=Stop.HOLD)\n';
+  code += '    _lf["right"].run_angle(_lf["base_speed"], -deg, then=Stop.HOLD)\n\n';
+
+  return code;
+}
+
+function buildGrabberCode(cfg) {
+  var g = cfg || appConfig.grabbers;
+  var code = '\n# ===== 抓取器函数 =====\n';
+
+  ['A','B'].forEach(function(which) {
+    var gc = g[which];
+    var port = gc.port;
+    var grabberVar = getPortVarName(port, 'grabber');
+    var openDeg = gc.open_degrees;
+    var closeDeg = gc.close_degrees;
+    var speed = gc.speed;
+
+    code += grabberVar + ' = Motor(Port.' + port + ')\n';
+
+    code += 'def _grabber_' + which + '_open():\n';
+    code += '    ' + grabberVar + '.run_target(' + speed + ', ' + openDeg + ', then=Stop.HOLD)\n\n';
+
+    code += 'def _grabber_' + which + '_close():\n';
+    code += '    ' + grabberVar + '.run_target(' + speed + ', ' + closeDeg + ', then=Stop.HOLD)\n\n';
+
+    code += 'def _grabber_' + which + '_open_async():\n';
+    code += '    ' + grabberVar + '.run_target(' + speed + ', ' + openDeg + ', then=Stop.HOLD, wait=False)\n\n';
+
+    code += 'def _grabber_' + which + '_close_async():\n';
+    code += '    ' + grabberVar + '.run_target(' + speed + ', ' + closeDeg + ', then=Stop.HOLD, wait=False)\n\n';
+  });
+
+  return code;
+}
+
+function buildColorLogCode(maxEntries) {
+  var max = maxEntries || appConfig.colorLogMax || 50;
+  var code = '\n# ===== 颜色日志 =====\n';
+  code += '_color_log = []\n';
+  code += '_COLOR_LOG_MAX = ' + max + '\n\n';
+  code += 'def _log_color(sensor):\n';
+  code += '    _color_log.append((sensor.color(), sensor.reflection()))\n';
+  code += '    if len(_color_log) > _COLOR_LOG_MAX:\n';
+  code += '        _color_log.pop(0)\n\n';
+  return code;
+}
+
+// ============================================================
+// MEMORY ESTIMATOR
+// ============================================================
+function estimateMemory(code) {
+  var total = 0;
+  // Firmware baseline ~90KB for PrimeHub
+  total += 90000;
+  // Each Motor object ~250 bytes
+  var motorCount = (code.match(/Motor\(/g) || []).length;
+  total += motorCount * 250;
+  // Each sensor ~150 bytes
+  var sensorPatterns = ['ColorSensor', 'UltrasonicSensor', 'ForceSensor', 'GyroSensor'];
+  var sensorCount = 0;
+  sensorPatterns.forEach(function(s) {
+    sensorCount += (code.match(new RegExp(s + '\\(', 'g')) || []).length;
+  });
+  total += sensorCount * 150;
+  // DriveBase ~300 bytes
+  if (code.indexOf('DriveBase(') >= 0) total += 300;
+  // Color log: 2 ints per entry ~20 bytes
+  total += (appConfig.colorLogMax || 50) * 20;
+  // Config dicts ~200-300 bytes each
+  if (code.indexOf('_lf') >= 0) total += 300;
+  if (code.indexOf('_grabber_') >= 0) total += 250;
+  // Stack ~1500 bytes
+  total += 1500;
+  // Code bytecode estimate ~50% of source length
+  total += Math.round(code.length * 0.5);
+  // Python runtime overhead
+  total += 2000;
+  return Math.round(total);
+}
+
+function getMemoryColor(bytes) {
+  var max = 166000;
+  var pct = bytes / max;
+  if (pct < 0.6) return '#4CAF50';
+  if (pct < 0.8) return '#FF9800';
+  return '#F44336';
+}
+
+function getMemoryLevel(bytes) {
+  var max = 166000;
+  var pct = bytes / max;
+  if (pct < 0.6) return '安全';
+  if (pct < 0.8) return '警告';
+  return '危险';
+}
+
+function renderMemoryEstimate() {
+  var code = Blockly.Python.workspaceToCode(workspace) || '';
+  var est = estimateMemory(code);
+  var max = 166000;
+  var pct = Math.min(100, Math.round((est / max) * 100));
+  var color = getMemoryColor(est);
+  var level = getMemoryLevel(est);
+
+  var container = document.getElementById('memSim');
+  if (!container) return;
+
+  var motorCount = (code.match(/Motor\(/g) || []).length;
+  var sensors = 0;
+  ['ColorSensor', 'UltrasonicSensor', 'ForceSensor', 'GyroSensor'].forEach(function(s) {
+    sensors += (code.match(new RegExp(s + '\\(', 'g')) || []).length;
+  });
+
+  container.innerHTML =
+    '<div class="memory-gauge-container">' +
+      '<div class="memory-bar-outer">' +
+        '<div class="memory-bar-inner" style="width:' + pct + '%;background:' + color + ';"></div>' +
+      '</div>' +
+      '<div class="memory-bar-label" style="color:' + color + '">' + pct + '% - ' + level + '</div>' +
+    '</div>' +
+    '<div class="memory-stats">' +
+      '<div>固件基线: ~90KB</div>' +
+      '<div>电机对象: ' + motorCount + ' × 250B = ' + (motorCount * 250) + 'B</div>' +
+      '<div>传感器对象: ' + sensors + ' × 150B = ' + (sensors * 150) + 'B</div>' +
+      '<div>颜色日志缓冲: ' + (appConfig.colorLogMax || 50) + ' × 20B = ' + ((appConfig.colorLogMax || 50) * 20) + 'B</div>' +
+      '<div>代码字节码: ~' + Math.round(code.length * 0.5) + 'B</div>' +
+      '<div>栈空间: ~1500B</div>' +
+      '<div style="font-weight:700;margin-top:4px;">估算总计: ~' + (est / 1024).toFixed(1) + 'KB / 166KB</div>' +
+    '</div>';
+
+  var tips = document.getElementById('memTips');
+  if (tips) {
+    var tipText = '';
+    if (pct < 60) {
+      tipText = '内存使用在安全范围内，可以放心部署到 PrimeHub。';
+    } else if (pct < 80) {
+      tipText = '内存使用偏高。建议：减少颜色日志条目数、避免创建不必要的变量、及时调用垃圾回收。';
+    } else {
+      tipText = '内存使用接近上限！强烈建议：减少传感器/电机对象、降低颜色日志最大条目数（当前' + (appConfig.colorLogMax || 50) + '条）、使用 gc.collect() 主动释放内存。PrimeHub 内存仅约166KB，超限将导致程序崩溃。';
+    }
+    if (motorCount > 4) tipText += ' 当前电机数量(' + motorCount + ')较多，请确认是否都需要。';
+    tips.textContent = tipText;
+  }
+}
+
+function updateExportMemBar() {
+  var code = lastGeneratedCode || '';
+  var est = estimateMemory(code);
+  var max = 166000;
+  var pct = Math.min(100, Math.round((est / max) * 100));
+  var color = getMemoryColor(est);
+  var level = getMemoryLevel(est);
+  var bar = document.getElementById('exportMemBar');
+  if (bar) {
+    bar.innerHTML =
+      '<div class="mem-text">内存估算: ' + (est / 1024).toFixed(1) + 'KB / 166KB</div>' +
+      '<div class="mini-gauge"><div class="mini-gauge-fill" style="width:' + pct + '%;background:' + color + ';"></div></div>' +
+      '<div class="mem-text" style="color:' + color + '">' + level + '</div>';
+  }
+}
+
+// ============================================================
+// TOOLBOX XML
+// ============================================================
+function buildToolbox() {
+  return '<xml xmlns="https://developers.google.com/blockly/xml" id="toolbox" style="display: none;">' +
+    '<category name="Hub" colour="#FF6680">' +
+      '<block type="pybricks_hub_display_text"><value name="TEXT"><shadow type="text"><field name="TEXT">Hello!</field></shadow></value></block>' +
+      '<block type="pybricks_hub_display_image"></block>' +
+      '<block type="pybricks_hub_battery"></block>' +
+      '<block type="pybricks_hub_button_pressed"></block>' +
+      '<block type="pybricks_hub_heading"></block>' +
+      '<block type="pybricks_hub_imu_accel"></block>' +
+      '<block type="pybricks_hub_imu_gyro"></block>' +
+      '<block type="pybricks_hub_speaker_beep"><value name="FREQ"><shadow type="math_number"><field name="NUM">440</field></shadow></value><value name="DURATION"><shadow type="math_number"><field name="NUM">500</field></shadow></value></block>' +
+      '<block type="pybricks_hub_status_light"></block>' +
+      '<block type="pybricks_hub_light"></block>' +
+    '</category>' +
+    '<category name="电机 Motor" colour="#4C97FF">' +
+      '<block type="pybricks_motor_init"></block>' +
+      '<block type="pybricks_motor_run"><value name="SPEED"><shadow type="math_number"><field name="NUM">500</field></shadow></value></block>' +
+      '<block type="pybricks_motor_stop"></block>' +
+      '<block type="pybricks_motor_run_angle"><value name="SPEED"><shadow type="math_number"><field name="NUM">500</field></shadow></value><value name="ANGLE"><shadow type="math_number"><field name="NUM">90</field></shadow></value></block>' +
+      '<block type="pybricks_motor_run_time"><value name="SPEED"><shadow type="math_number"><field name="NUM">500</field></shadow></value><value name="TIME"><shadow type="math_number"><field name="NUM">1000</field></shadow></value></block>' +
+      '<block type="pybricks_motor_run_async"><value name="SPEED"><shadow type="math_number"><field name="NUM">500</field></shadow></value><value name="ANGLE"><shadow type="math_number"><field name="NUM">90</field></shadow></value></block>' +
+      '<block type="pybricks_motor_run_target"><value name="SPEED"><shadow type="math_number"><field name="NUM">500</field></shadow></value><value name="ANGLE"><shadow type="math_number"><field name="NUM">0</field></shadow></value></block>' +
+      '<block type="pybricks_motor_run_until_stalled"><value name="SPEED"><shadow type="math_number"><field name="NUM">200</field></shadow></value></block>' +
+      '<block type="pybricks_motor_set_dc"><value name="DUTY"><shadow type="math_number"><field name="NUM">50</field></shadow></value></block>' +
+      '<block type="pybricks_motor_hold"></block>' +
+      '<block type="pybricks_motor_get_angle"></block>' +
+      '<block type="pybricks_motor_get_speed"></block>' +
+      '<block type="pybricks_motor_load"></block>' +
+      '<block type="pybricks_motor_done"></block>' +
+      '<block type="pybricks_motor_reset_angle"></block>' +
+    '</category>' +
+    '<category name="传感器 Sensor" colour="#5CB1D6">' +
+      '<label text="颜色传感器"></label>' +
+      '<block type="pybricks_color_sensor_init"></block>' +
+      '<block type="pybricks_color_sensor_color"></block>' +
+      '<block type="pybricks_color_sensor_reflection"></block>' +
+      '<block type="pybricks_color_sensor_ambient"></block>' +
+      '<block type="pybricks_color_sensor_hsv"></block>' +
+      '<block type="pybricks_color_sensor_lights"></block>' +
+      '<label text="超声波传感器"></label>' +
+      '<block type="pybricks_ultrasonic_init"></block>' +
+      '<block type="pybricks_ultrasonic_distance"></block>' +
+      '<block type="pybricks_ultrasonic_presence"></block>' +
+      '<label text="力传感器"></label>' +
+      '<block type="pybricks_force_sensor_init"></block>' +
+      '<block type="pybricks_force_sensor_force"></block>' +
+      '<block type="pybricks_force_sensor_pressed"></block>' +
+      '<label text="陀螺仪传感器"></label>' +
+      '<block type="pybricks_gyro_init"></block>' +
+      '<block type="pybricks_gyro_angle"></block>' +
+      '<block type="pybricks_gyro_rate"></block>' +
+      '<block type="pybricks_gyro_reset_angle"></block>' +
+    '</category>' +
+    '<category name="移动 Movement" colour="#9966FF">' +
+      '<block type="pybricks_drive_base_init">' +
+        '<value name="WHEEL_DIAM"><shadow type="math_number"><field name="NUM">56</field></shadow></value>' +
+        '<value name="AXLE_TRACK"><shadow type="math_number"><field name="NUM">112</field></shadow></value>' +
+      '</block>' +
+      '<block type="pybricks_drive_base_straight"><value name="DISTANCE"><shadow type="math_number"><field name="NUM">100</field></shadow></value></block>' +
+      '<block type="pybricks_drive_base_turn"><value name="ANGLE"><shadow type="math_number"><field name="NUM">90</field></shadow></value></block>' +
+      '<block type="pybricks_drive_base_curve"><value name="RADIUS"><shadow type="math_number"><field name="NUM">200</field></shadow></value><value name="ANGLE"><shadow type="math_number"><field name="NUM">90</field></shadow></value></block>' +
+      '<block type="pybricks_drive_base_drive"><value name="SPEED"><shadow type="math_number"><field name="NUM">200</field></shadow></value><value name="TURN_RATE"><shadow type="math_number"><field name="NUM">0</field></shadow></value></block>' +
+      '<block type="pybricks_drive_base_stop"></block>' +
+      '<block type="pybricks_drive_base_settings">' +
+        '<value name="SPEED"><shadow type="math_number"><field name="NUM">200</field></shadow></value>' +
+        '<value name="ACCEL"><shadow type="math_number"><field name="NUM">100</field></shadow></value>' +
+        '<value name="TURN_RATE"><shadow type="math_number"><field name="NUM">100</field></shadow></value>' +
+        '<value name="TURN_ACCEL"><shadow type="math_number"><field name="NUM">100</field></shadow></value>' +
+      '</block>' +
+      '<block type="pybricks_drive_base_distance"></block>' +
+      '<block type="pybricks_drive_base_angle"></block>' +
+    '</category>' +
+    '<category name="巡线&抓取" colour="#00BFA5">' +
+      '<label text="巡线 (PID)"></label>' +
+      '<block type="pybricks_line_follow_start"></block>' +
+      '<block type="pybricks_line_follow_stop"></block>' +
+      '<block type="pybricks_line_follow_step"></block>' +
+      '<block type="pybricks_line_follow_forward"><value name="DISTANCE"><shadow type="math_number"><field name="NUM">100</field></shadow></value></block>' +
+      '<block type="pybricks_line_follow_turn"><value name="ANGLE"><shadow type="math_number"><field name="NUM">90</field></shadow></value><value name="RADIUS"><shadow type="math_number"><field name="NUM">200</field></shadow></value></block>' +
+      '<block type="pybricks_line_follow_backward"><value name="DISTANCE"><shadow type="math_number"><field name="NUM">100</field></shadow></value></block>' +
+      '<label text="抓取器"></label>' +
+      '<block type="pybricks_grabber_action"></block>' +
+      '<block type="pybricks_grabber_async"></block>' +
+      '<label text="颜色记录"></label>' +
+      '<block type="pybricks_color_log"></block>' +
+      '<block type="pybricks_color_log_clear"></block>' +
+      '<block type="pybricks_last_color"></block>' +
+      '<block type="pybricks_last_reflection"></block>' +
+      '<block type="pybricks_color_log_count"></block>' +
+    '</category>' +
+    '<category name="控制 Control" colour="#FFAB19">' +
+      '<block type="pybricks_wait"><value name="TIME"><shadow type="math_number"><field name="NUM">1000</field></shadow></value></block>' +
+      '<block type="controls_repeat_ext"><value name="TIMES"><shadow type="math_number"><field name="NUM">10</field></shadow></value></block>' +
+      '<block type="controls_whileUntil"></block>' +
+      '<block type="controls_if"></block>' +
+      '<block type="pybricks_stopwatch"></block>' +
+      '<block type="pybricks_stopwatch_reset"></block>' +
+      '<block type="pybricks_gc_collect"></block>' +
+    '</category>' +
+    '<category name="运算 Operators" colour="#59C059">' +
+      '<block type="math_number"></block>' +
+      '<block type="math_arithmetic"></block>' +
+      '<block type="math_compare"></block>' +
+      '<block type="logic_compare"></block>' +
+      '<block type="logic_operation"></block>' +
+      '<block type="logic_negate"></block>' +
+      '<block type="logic_boolean"></block>' +
+      '<block type="text"></block>' +
+      '<block type="text_join"></block>' +
+      '<block type="text_length"></block>' +
+      '<block type="math_random_int"><value name="FROM"><shadow type="math_number"><field name="NUM">1</field></shadow></value><value name="TO"><shadow type="math_number"><field name="NUM">10</field></shadow></value></block>' +
+    '</category>' +
+    '<category name="变量 Variables" colour="#FF8C1A" custom="VARIABLE"></category>' +
+  '</xml>';
+}
+
+// ============================================================
+// WORKSPACE INITIALIZATION
+// ============================================================
+var workspace;
+
+function initWorkspace() {
+  workspace = Blockly.inject('blocklyDiv', {
+    toolbox: buildToolbox(),
+    trashcan: true,
+    zoom: {
+      controls: true,
+      wheel: true,
+      startScale: 1.0,
+      maxScale: 3,
+      minScale: 0.3,
+      scaleSpeed: 1.2
+    },
+    grid: {
+      spacing: 20,
+      length: 3,
+      colour: '#E0E0E0',
+      snap: false
+    },
+    renderer: 'zelos',
+    theme: Blockly.Theme.defineTheme('pybricks_theme', {
+      'base': Blockly.Themes.Zelos,
+      'componentStyles': {
+        'workspaceBackgroundColour': '#F9F9FC',
+      }
+    }),
+    move: { scrollbars: { horizontal: true, vertical: true }, drag: true, wheel: true }
+  });
+
+  window.addEventListener('resize', onResize);
+  onResize();
+}
+
+function onResize() {
+  var main = document.getElementById('main');
+  var div = document.getElementById('blocklyDiv');
+  if (div) {
+    div.style.width = main.offsetWidth + 'px';
+    div.style.height = main.offsetHeight + 'px';
+  }
+  if (workspace) Blockly.svgResize(workspace);
+}
+
+// ============================================================
+// CONFIG PANEL
+// ============================================================
+var activeConfigTab = 'ports';
+
+var TAB_ID_MAP = { ports:'tabPorts', grabbers:'tabGrabbers', linefollow:'tabLineFollow', memory:'tabMemory' };
+
+function switchConfigTab(tab) {
+  activeConfigTab = tab;
+  var tabs = document.querySelectorAll('.config-tab');
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].classList.remove('active');
+  }
+  var contents = document.querySelectorAll('.config-tab-content');
+  for (var i = 0; i < contents.length; i++) {
+    contents[i].classList.remove('active');
+  }
+  var target = document.getElementById(TAB_ID_MAP[tab]);
+  if (target) target.classList.add('active');
+
+  if (tab === 'memory') renderMemoryEstimate();
+}
+
+function openConfigPanel() {
+  document.getElementById('configOverlay').classList.add('active');
+  renderHubTypeSelector();
+  renderPortConfig();
+  renderGrabberConfig();
+  renderLineFollowConfig();
+  switchConfigTab('ports');
+}
+
+function closeConfigPanel() {
+  document.getElementById('configOverlay').classList.remove('active');
+}
+
+function renderHubTypeSelector() {
+  var container = document.getElementById('hubTypeSelector');
+  container.innerHTML = HUB_TYPES.map(function(ht) {
+    var sel = appConfig.hubType === ht.value ? ' selected' : '';
+    return '<div class="hub-type-card' + sel + '" data-hub="' + ht.value + '" onclick="selectHubType(\'' + ht.value + '\')">' +
+      '<div class="hub-name">' + ht.label + '</div>' +
+      '<div class="hub-desc">' + ht.desc + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function selectHubType(type) {
+  appConfig.hubType = type;
+  var currentPorts = PORT_NAMES[type];
+  var newPorts = {};
+  for (var i = 0; i < Object.keys(currentPorts).length; i++) {
+    var p = Object.keys(currentPorts)[i];
+    newPorts[p] = appConfig.ports[p] || '';
+  }
+  appConfig.ports = newPorts;
+  renderHubTypeSelector();
+  renderPortConfig();
+}
+
+function renderPortConfig() {
+  var ports = PORT_NAMES[appConfig.hubType];
+  renderPortVisual(ports);
+  renderPortsGrid(ports);
+}
+
+function renderPortVisual(ports) {
+  var container = document.getElementById('portVisual');
+  var dotColors = { motor:'motor', color_sensor:'color_sensor',
+    ultrasonic_sensor:'ultrasonic_sensor', force_sensor:'force_sensor',
+    gyro_sensor:'gyro_sensor', grabber:'grabber' };
+  var portKeys = Object.keys(ports);
+  var dots = '';
+  for (var i = 0; i < portKeys.length; i++) {
+    var p = portKeys[i];
+    var dev = appConfig.ports[p] || '';
+    var cls = dotColors[dev] || '';
+    dots += '<div class="port-dot"><div class="dot ' + cls + '"></div><span>' + p + '</span></div>';
+  }
+  container.innerHTML =
+    '<div class="hub-visual">' + appConfig.hubType + '</div>' +
+    '<div class="port-dots">' + dots + '</div>';
+}
+
+function renderPortsGrid(ports) {
+  var container = document.getElementById('portsGrid');
+  var portKeys = Object.keys(ports);
+  var html = '';
+  for (var i = 0; i < portKeys.length; i++) {
+    var p = portKeys[i];
+    var current = appConfig.ports[p] || '';
+    var opts = '';
+    for (var j = 0; j < DEVICE_OPTIONS.length; j++) {
+      var o = DEVICE_OPTIONS[j];
+      opts += '<option value="' + o.value + '"' + (current === o.value ? ' selected' : '') + '>' + o.label + '</option>';
+    }
+    html += '<div class="port-card">' +
+      '<div class="port-label">端口 ' + p + '</div>' +
+      '<select data-port="' + p + '" onchange="updatePortConfig(\'' + p + '\', this.value)">' + opts + '</select>' +
+    '</div>';
+  }
+  container.innerHTML = html;
+}
+
+function updatePortConfig(port, value) {
+  appConfig.ports[port] = value || '';
+  var ports = PORT_NAMES[appConfig.hubType];
+  renderPortVisual(ports);
+}
+
+// ===== GRABBER CONFIG =====
+function renderGrabberConfig() {
+  var container = document.getElementById('grabberConfig');
+  if (!container) return;
+  var html = '';
+  ['A','B'].forEach(function(which) {
+    var g = appConfig.grabbers[which];
+    var portOpts = '';
+    var ports = PORT_NAMES[appConfig.hubType];
+    var portKeys = Object.keys(ports);
+    for (var i = 0; i < portKeys.length; i++) {
+      var p = portKeys[i];
+      portOpts += '<option value="' + p + '"' + (g.port === p ? ' selected' : '') + '>端口 ' + p + '</option>';
+    }
+    html += '<div class="grabber-card">' +
+      '<h4>抓取器 ' + which + ' (' + (which === 'A' ? '杆子1' : '杆子2') + ')</h4>' +
+      '<div class="grabber-row"><label>端口</label><select onchange="updateGrabber(\'' + which + '\',\'port\',this.value)">' + portOpts + '</select></div>' +
+      '<div class="grabber-row"><label>打开度数</label><input type="number" value="' + g.open_degrees + '" onchange="updateGrabber(\'' + which + '\',\'open_degrees\',parseInt(this.value)||0)"></div>' +
+      '<div class="grabber-row"><label>关闭度数</label><input type="number" value="' + g.close_degrees + '" onchange="updateGrabber(\'' + which + '\',\'close_degrees\',parseInt(this.value)||0)"></div>' +
+      '<div class="grabber-row"><label>速度 (°/s)</label><input type="number" value="' + g.speed + '" onchange="updateGrabber(\'' + which + '\',\'speed\',parseInt(this.value)||100)"></div>' +
+    '</div>';
+  });
+  container.innerHTML = html;
+}
+
+function updateGrabber(which, key, value) {
+  appConfig.grabbers[which][key] = value;
+}
+
+// ===== LINE FOLLOW CONFIG =====
+function renderLineFollowConfig() {
+  var lf = appConfig.lineFollow;
+  var portOpts = '';
+  var ports = PORT_NAMES[appConfig.hubType];
+  var portKeys = Object.keys(ports);
+  for (var i = 0; i < portKeys.length; i++) {
+    var p = portKeys[i];
+    portOpts += '<option value="' + p + '">端口 ' + p + '</option>';
+  }
+
+  var lfPorts = document.getElementById('lfPorts');
+  if (lfPorts) {
+    lfPorts.innerHTML =
+      '<div class="lf-row"><label>左轮端口</label><select onchange="updateLF(\'left_port\',this.value)">' + portOpts.replace('value="' + lf.left_port + '"', 'value="' + lf.left_port + '" selected') + '</select></div>' +
+      '<div class="lf-row"><label>右轮端口</label><select onchange="updateLF(\'right_port\',this.value)">' + portOpts.replace('value="' + lf.right_port + '"', 'value="' + lf.right_port + '" selected') + '</select></div>' +
+      '<div class="lf-row"><label>颜色传感器端口</label><select onchange="updateLF(\'sensor_port\',this.value)">' + portOpts.replace('value="' + lf.sensor_port + '"', 'value="' + lf.sensor_port + '" selected') + '</select></div>';
+  }
+
+  var lfVehicle = document.getElementById('lfVehicle');
+  if (lfVehicle) {
+    lfVehicle.innerHTML =
+      '<div class="lf-row"><label>轮径 (mm)</label><input type="number" value="' + lf.wheel_diam + '" onchange="updateLF(\'wheel_diam\',parseFloat(this.value)||56)"></div>' +
+      '<div class="lf-row"><label>轴距 (mm)</label><input type="number" value="' + lf.axle_track + '" onchange="updateLF(\'axle_track\',parseFloat(this.value)||112)"></div>' +
+      '<div class="lf-row"><label>基础速度 (°/s)</label><input type="number" value="' + lf.base_speed + '" onchange="updateLF(\'base_speed\',parseInt(this.value)||200)"></div>' +
+      '<div class="lf-row"><label>频率 (Hz)</label><input type="number" value="' + lf.freq + '" onchange="updateLF(\'freq\',parseInt(this.value)||50)"></div>';
+  }
+
+  var lfPID = document.getElementById('lfPID');
+  if (lfPID) {
+    lfPID.innerHTML =
+      '<div class="lf-row"><label>Kp</label><input type="number" step="0.1" value="' + lf.kp + '" onchange="updateLF(\'kp\',parseFloat(this.value)||0)"></div>' +
+      '<div class="lf-row"><label>Ki</label><input type="number" step="0.01" value="' + lf.ki + '" onchange="updateLF(\'ki\',parseFloat(this.value)||0)"></div>' +
+      '<div class="lf-row"><label>Kd</label><input type="number" step="0.1" value="' + lf.kd + '" onchange="updateLF(\'kd\',parseFloat(this.value)||0)"></div>';
+  }
+
+  var lfRefl = document.getElementById('lfRefl');
+  if (lfRefl) {
+    lfRefl.innerHTML =
+      '<div class="lf-row"><label>线条反射值</label><input type="number" value="' + lf.line_refl + '" onchange="updateLF(\'line_refl\',parseInt(this.value)||0)"></div>' +
+      '<div class="lf-row"><label>背景反射值</label><input type="number" value="' + lf.bg_refl + '" onchange="updateLF(\'bg_refl\',parseInt(this.value)||100)"></div>' +
+      '<div class="lf-row"><label>颜色日志上限</label><input type="number" value="' + (appConfig.colorLogMax || 50) + '" onchange="appConfig.colorLogMax=parseInt(this.value)||50"></div>';
+  }
+}
+
+function updateLF(key, value) {
+  appConfig.lineFollow[key] = value;
+}
+
+function saveConfig() {
+  document.getElementById('configOverlay').classList.remove('active');
+  updateHubBadge();
+}
+
+// ============================================================
+// EXPORT
+// ============================================================
+function getUsedDeviceTypes(code) {
+  var types = {};
+  if (code.indexOf('Motor(') >= 0) types.Motor = true;
+  if (code.indexOf('ColorSensor(') >= 0) types.ColorSensor = true;
+  if (code.indexOf('UltrasonicSensor(') >= 0) types.UltrasonicSensor = true;
+  if (code.indexOf('ForceSensor(') >= 0) types.ForceSensor = true;
+  if (code.indexOf('GyroSensor(') >= 0) types.GyroSensor = true;
+  if (code.indexOf('DriveBase(') >= 0) types.DriveBase = true;
+  if (code.indexOf('wait(') >= 0) types.wait = true;
+  if (code.indexOf('StopWatch(') >= 0 || code.indexOf('stopwatch.') >= 0) types.StopWatch = true;
+  if (code.indexOf('Image.') >= 0) types.Image = true;
+  return types;
+}
+
+function generatePythonCode() {
+  var code = Blockly.Python.workspaceToCode(workspace);
+  if (!code || code.trim() === '') {
+    code = '# 拖拽积木到工作区开始编程\nhub.display.text("Hello!")\n';
+  }
+
+  var deviceTypes = getUsedDeviceTypes(code);
+
+  // Check which helpers are needed
+  var needsLineFollow = code.indexOf('_lf_') >= 0;
+  var needsGrabber = code.indexOf('_grabber_') >= 0;
+  var needsColorLog = code.indexOf('_log_color(') >= 0;
+  var needsGC = code.indexOf('gc.collect()') >= 0;
+
+  // Build imports
+  var imports = ['from pybricks.hubs import ' + appConfig.hubType];
+  var pupDevices = [];
+  var deviceOrder = ['Motor', 'ColorSensor', 'UltrasonicSensor', 'ForceSensor', 'GyroSensor'];
+  for (var i = 0; i < deviceOrder.length; i++) {
+    if (deviceTypes[deviceOrder[i]]) pupDevices.push(deviceOrder[i]);
+  }
+  if (pupDevices.length > 0) {
+    imports.push('from pybricks.pupdevices import ' + pupDevices.join(', '));
+  }
+  var params = ['Port', 'Color', 'Direction', 'Button', 'Stop'];
+  if (deviceTypes.Image) params.push('Image');
+  imports.push('from pybricks.parameters import ' + params.join(', '));
+  if (deviceTypes.DriveBase) {
+    imports.push('from pybricks.robotics import DriveBase');
+  }
+  var tools = [];
+  if (deviceTypes.wait) tools.push('wait');
+  if (deviceTypes.StopWatch) tools.push('StopWatch');
+  if (tools.length > 0) {
+    imports.push('from pybricks.tools import ' + tools.join(', '));
+  }
+  if (needsGC) {
+    imports.push('import gc');
+  }
+
+  // Build initialization
+  var initLines = [];
+  initLines.push('hub = ' + appConfig.hubType + '()');
+
+  var ports = PORT_NAMES[appConfig.hubType];
+  var portKeys = Object.keys(ports);
+  for (var i = 0; i < portKeys.length; i++) {
+    var p = portKeys[i];
+    var dev = appConfig.ports[p];
+    if (!dev || dev === 'grabber') continue;
+    var varName = getPortVarName(p, dev);
+    if (dev === 'motor' && deviceTypes.Motor) {
+      if (code.indexOf(varName + ' = Motor(') < 0) {
+        initLines.push(varName + ' = Motor(Port.' + p + ')');
+      }
+    } else if (dev === 'color_sensor' && deviceTypes.ColorSensor) {
+      if (code.indexOf(varName + ' = ColorSensor(') < 0) {
+        initLines.push(varName + ' = ColorSensor(Port.' + p + ')');
+      }
+    } else if (dev === 'ultrasonic_sensor' && deviceTypes.UltrasonicSensor) {
+      if (code.indexOf(varName + ' = UltrasonicSensor(') < 0) {
+        initLines.push(varName + ' = UltrasonicSensor(Port.' + p + ')');
+      }
+    } else if (dev === 'force_sensor' && deviceTypes.ForceSensor) {
+      if (code.indexOf(varName + ' = ForceSensor(') < 0) {
+        initLines.push(varName + ' = ForceSensor(Port.' + p + ')');
+      }
+    } else if (dev === 'gyro_sensor' && deviceTypes.GyroSensor) {
+      if (code.indexOf(varName + ' = GyroSensor(') < 0) {
+        initLines.push(varName + ' = GyroSensor(Port.' + p + ')');
+      }
+    }
+  }
+
+  // Add StopWatch
+  if (deviceTypes.StopWatch && code.indexOf('stopwatch = ') < 0) {
+    initLines.push('stopwatch = StopWatch()');
+  }
+
+  // Build helper code
+  var helperCode = '';
+  if (needsGrabber) {
+    code = code.replace(/_grabber_[AB] = Motor\(Port\.\w\)\n/g, '');
+    helperCode += buildGrabberCode();
+  }
+  if (needsColorLog) {
+    helperCode += buildColorLogCode();
+  }
+  if (needsLineFollow) {
+    helperCode += buildLineFollowCode();
+  }
+
+  // Combine
+  var header = imports.join('\n') + '\n\n# 初始化\n' + initLines.join('\n');
+  if (helperCode) {
+    header += '\n' + helperCode;
+  }
+  header += '\n# 主程序';
+  var cleanedCode = code.replace(/\n{3,}/g, '\n\n').trim();
+
+  return header + '\n' + cleanedCode + '\n';
+}
+
+var lastGeneratedCode = '';
+
+function exportPython() {
+  lastGeneratedCode = generatePythonCode();
+  document.getElementById('codePreview').textContent = lastGeneratedCode;
+  document.getElementById('exportOverlay').classList.add('active');
+  updateExportMemBar();
+}
+
+function closeExportPanel() {
+  document.getElementById('exportOverlay').classList.remove('active');
+}
+
+function copyCode() {
+  if (!lastGeneratedCode) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(lastGeneratedCode).then(function() {
+      showToast('代码已复制到剪贴板');
+    }).catch(function() {
+      fallbackCopy();
+    });
+  } else {
+    fallbackCopy();
+  }
+}
+
+function fallbackCopy() {
+  var ta = document.createElement('textarea');
+  ta.value = lastGeneratedCode;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+  showToast('代码已复制');
+}
+
+function downloadCode() {
+  if (!lastGeneratedCode) return;
+  var blob = new Blob([lastGeneratedCode], { type: 'text/x-python;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'pybricks_program.py';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('文件已下载: pybricks_program.py');
+  closeExportPanel();
+}
+
+// ============================================================
+// TOAST NOTIFICATION
+// ============================================================
+function showToast(msg) {
+  var toast = document.getElementById('toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast';
+    toast.style.cssText =
+      'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);' +
+      'background:#333;color:white;padding:10px 24px;border-radius:20px;' +
+      'font-size:14px;z-index:9999;pointer-events:none;' +
+      'transition:opacity 0.3s;font-family: var(--font);';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(function() {
+    toast.style.opacity = '0';
+  }, 2000);
+}
+
+// ============================================================
+// NEW PROJECT
+// ============================================================
+function newProject() {
+  if (workspace) workspace.clear();
+  appConfig.ports = { A:'motor', B:'motor', C:'', D:'', E:'', F:'' };
+  appConfig.hubType = 'PrimeHub';
+  appConfig.grabbers = {
+    A: { port:'D', open_degrees:180, close_degrees:0, speed:300 },
+    B: { port:'E', open_degrees:0, close_degrees:120, speed:250 }
+  };
+  appConfig.lineFollow = {
+    left_port:'A', right_port:'B', sensor_port:'C',
+    wheel_diam:56, axle_track:112,
+    base_speed:200, freq:50,
+    kp:1.2, ki:0.01, kd:0.5,
+    line_refl:20, bg_refl:80
+  };
+  appConfig.colorLogMax = 50;
+  updateHubBadge();
+  showToast('新项目已创建');
+}
+
+// ============================================================
+// UTILITY
+// ============================================================
+function updateHubBadge() {
+  var ports = PORT_NAMES[appConfig.hubType];
+  var configured = 0;
+  var portKeys = Object.keys(ports);
+  for (var i = 0; i < portKeys.length; i++) {
+    if (appConfig.ports[portKeys[i]]) configured++;
+  }
+  document.getElementById('hubBadge').textContent =
+    'Hub: ' + appConfig.hubType + ' | 设备: ' + configured + '/' + portKeys.length;
+}
+
+// ============================================================
+// KEYBOARD SHORTCUTS
+// ============================================================
+document.addEventListener('keydown', function(e) {
+  if (e.ctrlKey || e.metaKey) {
+    if (e.key === 's') { e.preventDefault(); exportPython(); }
+    if (e.key === 'n') { e.preventDefault(); newProject(); }
+  }
+});
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+  initWorkspace();
+  updateHubBadge();
+  document.getElementById('configOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeConfigPanel();
+  });
+  document.getElementById('exportOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeExportPanel();
+  });
+});
+</script>
+
+</body>
+</html>
