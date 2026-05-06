@@ -1549,20 +1549,24 @@ function updateGrabber(which, key, value) {
 // ===== LINE FOLLOW CONFIG =====
 function renderLineFollowConfig() {
   var lf = appConfig.lineFollow;
-  var portOpts = '';
   var ports = PORT_NAMES[appConfig.hubType];
   var portKeys = Object.keys(ports);
-  for (var i = 0; i < portKeys.length; i++) {
-    var p = portKeys[i];
-    portOpts += '<option value="' + p + '">端口 ' + p + '</option>';
+
+  function makePortSelect(selectedPort, onChangeKey) {
+    var opts = '';
+    for (var i = 0; i < portKeys.length; i++) {
+      var p = portKeys[i];
+      opts += '<option value="' + p + '"' + (p === selectedPort ? ' selected' : '') + '>端口 ' + p + '</option>';
+    }
+    return '<select onchange="updateLF(\'' + onChangeKey + '\',this.value)">' + opts + '</select>';
   }
 
   var lfPorts = document.getElementById('lfPorts');
   if (lfPorts) {
     lfPorts.innerHTML =
-      '<div class="lf-row"><label>左轮端口</label><select onchange="updateLF(\'left_port\',this.value)">' + portOpts.replace('value="' + lf.left_port + '"', 'value="' + lf.left_port + '" selected') + '</select></div>' +
-      '<div class="lf-row"><label>右轮端口</label><select onchange="updateLF(\'right_port\',this.value)">' + portOpts.replace('value="' + lf.right_port + '"', 'value="' + lf.right_port + '" selected') + '</select></div>' +
-      '<div class="lf-row"><label>颜色传感器端口</label><select onchange="updateLF(\'sensor_port\',this.value)">' + portOpts.replace('value="' + lf.sensor_port + '"', 'value="' + lf.sensor_port + '" selected') + '</select></div>';
+      '<div class="lf-row"><label>左轮端口</label>' + makePortSelect(lf.left_port, 'left_port') + '</div>' +
+      '<div class="lf-row"><label>右轮端口</label>' + makePortSelect(lf.right_port, 'right_port') + '</div>' +
+      '<div class="lf-row"><label>颜色传感器端口</label>' + makePortSelect(lf.sensor_port, 'sensor_port') + '</div>';
   }
 
   var lfVehicle = document.getElementById('lfVehicle');
@@ -1628,7 +1632,7 @@ function generatePythonCode() {
   // Check which helpers are needed
   var needsLineFollow = code.indexOf('_lf_') >= 0;
   var needsGrabber = code.indexOf('_grabber_') >= 0;
-  var needsColorLog = code.indexOf('_log_color(') >= 0;
+  var needsColorLog = code.indexOf('_color_log') >= 0 || code.indexOf('_log_color(') >= 0;
   var needsGC = code.indexOf('gc.collect()') >= 0;
 
   // Build imports
